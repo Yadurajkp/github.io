@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ProMeet — Delete Account</title>
+  <meta name="description" content="Delete your ProMeet account and data." />
+  <style>
+    :root{--bg:#f7fbff;--card:#ffffff;--danger:#dc2626;--accent:#2563eb;--muted:#6b7280; --radius:12px; --maxw:700px;}
+    body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin:0; background:var(--bg); color:#071029;}
+    .wrap{max-width:var(--maxw); margin:36px auto; padding:20px;}
+    .card{background:var(--card); border-radius:var(--radius); padding:22px; box-shadow:0 8px 30px rgba(2,6,23,0.06);}
+    header{display:flex; gap:12px; align-items:center;}
+    .logo{width:48px;height:48px;border-radius:9px;background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;}
+    h1{margin:0;font-size:20px;}
+    p.lead{color:var(--muted); margin:6px 0 18px;}
+    .muted{color:var(--muted);}
+    label{display:block;margin-top:12px;font-weight:600;}
+    input[type="text"], .note{width:100%;padding:10px;border-radius:8px;border:1px solid #e6eef9;margin-top:8px;font-size:14px;}
+    .btn-row{display:flex;gap:12px;margin-top:18px;align-items:center;}
+    button{padding:10px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:600;}
+    .btn-delete{background:var(--danger); color:#fff;}
+    .btn-cancel{background:#eef2ff;color:#0f172a;}
+    .confirm-step{background:#fff3f3;border-left:4px solid var(--danger); padding:12px;border-radius:8px;margin-top:16px;}
+    .note{background:#fbfdff;border:1px dashed #e6f0ff;color:var(--muted);}
+    .api-url{font-family:monospace;font-size:13px;display:block;margin-top:8px;color:#0f172a;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" role="main" aria-labelledby="del-title">
+      <header>
+        <div class="logo">PM</div>
+        <div>
+          <h1 id="del-title">Delete Your ProMeet Account</h1>
+          <p class="lead">This action is permanent — your profile, meetings you hosted, and associated data will be deleted.</p>
+        </div>
+      </header>
+
+      <section>
+        <p class="muted">Before you proceed, please read:</p>
+        <ul>
+          <li>Deleting your account cannot be undone.</li>
+          <li>Some information required for legal reasons may be retained for a limited time (e.g., logs), but your personal profile will be removed.</li>
+        </ul>
+
+        <label for="username">Enter your username to confirm</label>
+        <input id="username" type="text" placeholder="your username" aria-label="username to confirm deletion" />
+
+        <label for="reason">Optional: tell us why (feedback)</label>
+        <input id="reason" type="text" placeholder="optional: reason for leaving" />
+
+        <div class="btn-row">
+          <button id="deleteBtn" class="btn-delete" aria-describedby="confirm-note">Delete account</button>
+          <button id="cancelBtn" class="btn-cancel">Cancel</button>
+        </div>
+
+        <div id="confirm-note" class="confirm-step" hidden>
+          <p><strong>Confirm deletion:</strong> Type <code>DELETE</code> in the box below and click <em>Confirm Delete</em>.</p>
+          <input id="confirmInput" type="text" placeholder="Type DELETE to confirm" style="margin-top:8px;padding:10px;border-radius:8px;border:1px solid #ffdede;width:100%;" />
+          <div style="display:flex;gap:10px;margin-top:12px;">
+            <button id="confirmDelete" class="btn-delete">Confirm Delete</button>
+            <button id="backBtn" class="btn-cancel">Back</button>
+          </div>
+        </div>
+
+        <div class="note" style="margin-top:16px;">
+          <p class="muted"><strong>Integration notes for developers:</strong></p>
+          <p class="muted">This page assumes your backend exposes a DELETE endpoint such as:</p>
+          <code class="api-url">DELETE https://api.yourdomain.com/users/{username}</code>
+          <p class="muted">Replace the placeholder above with your actual API URL. The sample JS sends a fetch request; in an Android WebView, you can intercept and call your native API.</p>
+        </div>
+
+        <p class="muted" style="margin-top:12px;">If you prefer, contact support at <a href="mailto:promeetpolicy@gmail.com" class="muted">promeetpolicy@gmail.com</a>.</p>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const deleteBtn = document.getElementById('deleteBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const confirmNote = document.getElementById('confirm-note');
+    const backBtn = document.getElementById('backBtn');
+    const confirmDelete = document.getElementById('confirmDelete');
+    const confirmInput = document.getElementById('confirmInput');
+    const usernameInput = document.getElementById('username');
+    const reasonInput = document.getElementById('reason');
+
+    cancelBtn.addEventListener('click', () => window.history.back());
+
+    deleteBtn.addEventListener('click', () => {
+      const username = (usernameInput.value || '').trim();
+      if (!username) {
+        alert('Please enter your username to confirm.');
+        usernameInput.focus();
+        return;
+      }
+      confirmNote.hidden = false;
+      confirmInput.focus();
+    });
+
+    backBtn.addEventListener('click', () => {
+      confirmNote.hidden = true;
+      confirmInput.value = '';
+    });
+
+    confirmDelete.addEventListener('click', async () => {
+      if ((confirmInput.value || '').trim().toUpperCase() !== 'DELETE') {
+        alert('Type DELETE exactly to confirm account deletion.');
+        confirmInput.focus();
+        return;
+      }
+
+      const username = usernameInput.value.trim();
+      const reason = reasonInput.value.trim();
+      const endpoint = `https://api.yourdomain.com/users/${encodeURIComponent(username)}`;
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason })
+        });
+
+        if (res.ok) {
+          alert('Your account has been deleted. Thank you for trying ProMeet.');
+          window.location.href = 'goodbye.html';
+        } else {
+          const text = await res.text();
+          alert('Failed to delete account: ' + (text || res.statusText));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Network error while deleting account. Please contact support at promeetpolicy@gmail.com.');
+      }
+    });
+  </script>
+</body>
+</html>
